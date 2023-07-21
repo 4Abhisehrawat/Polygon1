@@ -1,52 +1,38 @@
 const { ethers } = require("hardhat");
-require("dotenv").config();
+require('dotenv').config();
 
 async function main() {
-  // Get private key from env
-  const privateKey = process.env.PRIVATE_KEY;
+  try {
+    const networkAddress = 'https://rpc.ankr.com/polygon_mumbai'; // Mumbai network RPC URL
+    const privateKey = process.env.PRIVATE_KEY;
+    const provider = new ethers.providers.JsonRpcProvider(networkAddress);
 
-  // The URL of the network provider for Ethereum Goerli
-  const goerliProviderUrl = "https://ethereum-goerli.publicnode.com";
+    const wallet = new ethers.Wallet(privateKey, provider);
 
-  // Create a provider for Ethereum Goerli
-  const goerliProvider = new ethers.providers.JsonRpcProvider(goerliProviderUrl);
+    const signer = wallet.connect(provider);
+    // Get the MyNFTCollection contract instance
+    const nftAddress = '0x63ED88c270E4C4c9886Dc3825954E411b893718f'; 
+    const NFT = await ethers.getContractFactory("MyNFTCollection");
+    const nft = NFT.attach(nftAddress)
+    // Get the FxPortalBridge contract instance for Mumbai network
+    const fxPortalBridgeAddress = '0xF9bc4a80464E48369303196645e876c8C7D972de'; 
+    const FxPortalBridge = await ethers.getContractFactory("FxPortalBridge"); 
+    const fxPortalBridge = FxPortalBridge.attach(fxPortalBridgeAddress);
 
-  // Create a signer from the private key and provider for Ethereum Goerli
-  const goerliSigner = new ethers.Wallet(privateKey, goerliProvider);
+    // Token IDs to transfer
+    const tokenIds = [0, 1];
 
-  // The address of the deployed contract on Ethereum Goerli (update this with the actual contract address after deployment)
-  const contractAddress = "0x9d82a8709162B863CF5e62b51EE2B389505ACe87";
+    for (let i = 0; i < tokenIds.length; i++) {
+      await nft.connect(signer).approve(fxPortalBridgeAddress, tokenIds[i]);
+      console.log(`NFT with Token ID ${tokenIds[i]} approved for transfer.`);
+    }
+    const data = "Additional data related to the deposit"; 
+    const depositTx = await fxPortalBridge.connect(signer).deposit(data, nft.address, tokenIds, { gasPrice: ethers.utils.parseUnits("100", "gwei") });
+    await depositTx.wait();
 
-  // Get the contract factory and attach it to the signer for Ethereum Goerli
-  const MyNFTCollection = await ethers.getContractFactory("MyNFTCollection", goerliSigner);
-  const contract = await MyNFTCollection.attach(contractAddress);
-
-  // The address of the FxPortal Bridge contract on Ethereum Goerli (update this with the actual contract address)
-  const fxPortalBridgeAddress = "0x97FDBfAd6F9db2ce61661F1C36dC3449172929Fc";
-
-  // Get the contract factory and attach it to the signer for Ethereum Goerli
-  const FxPortalBridge = await ethers.getContractFactory("FxPortalBridge", goerliSigner);
-  const bridgeContract = await FxPortalBridge.attach(fxPortalBridgeAddress);
-
-  // TokenIds to transfer
-  const tokenIds = [0, 1, 2, 3, 4];
-
-  // Approve the NFTs for transfer to the FxPortal Bridge contract
-  for (let i = 0; i < tokenIds.length; i++) {
-    await contract.approve(fxPortalBridgeAddress, tokenIds[i]);
-    console.log(`NFT with Token ID ${tokenIds[i]} approved for transfer.`);
-  }
-
-  // Deposit the NFTs to the FxPortal Bridge contract for the transfer
-  const depositTx = await bridgeContract.deposit(contract.address, tokenIds);
-  await depositTx.wait();
-
-  console.log("NFTs deposited to the FxPortal Bridge for transfer.");
-}
-
-main()
-  .then(() => process.exit(0))
-  .catch((error) => {
+    console.log("NFTs deposited to the mumbai network for transfer.");
+  } catch (error) {
     console.error(error);
-    process.exit(1);
-  });
+  }
+}
+main();
