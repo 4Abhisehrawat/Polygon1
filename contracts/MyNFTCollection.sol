@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.9;
+pragma solidity ^0.8.1;
 
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
@@ -16,7 +16,6 @@ contract MyNFTCollection is ERC721Enumerable, Ownable {
     uint256 public currentTokenId = 0;
 
     constructor() ERC721("MyNFTCollection", "MNC") {
-        // Store the metadata of NFTs during deployment
         nfts.push(NFTMetadata('Mini Spidy', 'Mini Spidy NFT', 'QmNnGkBZUGpd813oj2HdXKTGZ14Kq6GthzpBWS56QZu14F'));
         nfts.push(NFTMetadata('Mini Superman', 'Mini Superman NFT', 'QmUGzZjKHJmPW2c59SzKD67fkAR2woF8ssbexapBhRBgHb'));
         nfts.push(NFTMetadata('Mini Ironman', 'Mini Ironman NFT', 'QmXu6bhmnndv5zZEDR1gKZgF9C2EYYvaZcfgMcUvTM5Z92'));
@@ -45,4 +44,11 @@ contract MyNFTCollection is ERC721Enumerable, Ownable {
     }
 }
 
+contract FxPortalBridge {
+    event Deposit(address indexed from, address indexed to, uint256 tokenId, string data);
 
+    function deposit(string calldata data, address to, uint256 tokenId) external {
+
+        emit Deposit(msg.sender, to, tokenId, data);
+    }
+}
